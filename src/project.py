@@ -1,10 +1,12 @@
 import pygame
 import random
 
+LANES = [80, 160, 240, 320]
+
 def create_obstacles(number):
     obstacles = []
     for _ in range(number):
-        x = random.randint(50, 325)
+        x = random.choice(LANES)
         y = random.randint(-200, -20)
         obstacles.append(pygame.Rect(x, y, 25, 25))
     return obstacles
@@ -26,7 +28,7 @@ def move_obstacles(obstacles, car_hitbox, score):
         obs.y += 4
         if obs.y > 400:
             obs.y = random.randint(-200, -20)
-            obs.x = random.randint(50, 325)
+            obs.x = random.choice(LANES)
             score += 1
         if car_hitbox.colliderect(obs):
             print("Oops! You hit a cone")
