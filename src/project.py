@@ -29,43 +29,41 @@ def create_obstacles(number):
 
 def create_trees(number, tree_width):
     tree_positions = []
-    attempts = 0
-    while len(tree_positions) < number and attempts < 1000:
-        attempts += 1
-        side = random.choice(['left', 'right'])
-        if side == 'left':
-            x = random.randint(0, 10)
-        else:
-            x = random.randint(SCREEN_WIDTH - tree_width - 10, SCREEN_WIDTH - tree_width)
-        y = random.randint(-200, -50)
-        if all(abs(x - tx) > tree_width for tx, ty in tree_positions):
-            tree_positions.append([x, y])
+    segment_height = SCREEN_HEIGHT // number
+    for i in range(number):
+        attempts = 0
+        while attempts < 1000:
+            attempts += 1
+            side = random.choice(['left', 'right'])
+            if side == 'left':
+                x = random.randint(0, 10)
+            else:
+                x = random.randint(SCREEN_WIDTH - tree_width - 10, SCREEN_WIDTH - tree_width)
+            y = random.randint(i * segment_height, (i + 1) * segment_height - 1)
+            if all(abs(x - tx) > tree_width for tx, ty in tree_positions):
+                tree_positions.append([x, y])
+                break
     return tree_positions
 
 def create_grass(number):
     grass_positions = []
-    for _ in range(number):
+    segment_height = SCREEN_HEIGHT // number
+    for i in range(number):
         side = random.choice(['left', 'right'])
         if side == 'left':
             x = random.randint(GREEN_LEFT_ZONE[0], GREEN_LEFT_ZONE[1])
         else:
             x = random.randint(GREEN_RIGHT_ZONE[0], SCREEN_WIDTH)
-        y = random.randint(-SCREEN_HEIGHT, 0)
+        y = random.randint(i * segment_height, (i + 1) * segment_height - 1)
         color = random.choice(GREEN_TONES)
         size = random.randint(GRASS_MIN_SIZE, GRASS_MAX_SIZE)
         blades = []
-        for i in range(size * 2):
+        for j in range(size * 2):
             offset_x = random.randint(-2, 2)
             offset_y = random.randint(-size*3, 0)
             blades.append((offset_x, offset_y))
         grass_positions.append([x, y, color, blades])
     return grass_positions
-
-def handle_events():
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            return False
-    return True
 
 def move_car(car_hitbox, keys):
     if keys[pygame.K_LEFT] and car_hitbox.left > 50:
@@ -73,7 +71,9 @@ def move_car(car_hitbox, keys):
     if keys[pygame.K_RIGHT] and car_hitbox.right < 350:
         car_hitbox.x += 5
 
-def move_obstacles(obstacles, car_hitbox, score):
+def move_obstacles(obstacles, car_hitbox, score, game_over):
+    if game_over:
+        return True, score
     for obs in obstacles:
         obs.y += OBSTACLE_SPEED
         if obs.y > SCREEN_HEIGHT:
@@ -81,11 +81,12 @@ def move_obstacles(obstacles, car_hitbox, score):
             obs.x = random.choice(LANES)
             score += 1
         if car_hitbox.colliderect(obs):
-            print("Oops! You hit a cone")
             return False, score
     return True, score
 
-def move_trees(tree_positions, tree_width):
+def move_trees(tree_positions, tree_width, game_over):
+    if game_over:
+        return
     for i, pos in enumerate(tree_positions):
         pos[1] += OBSTACLE_SPEED
         if pos[1] > SCREEN_HEIGHT:
@@ -104,7 +105,9 @@ def move_trees(tree_positions, tree_width):
                     pos[1] = random.randint(-80, -20)
                     break
 
-def move_grass(grass_positions):
+def move_grass(grass_positions, game_over):
+    if game_over:
+        return
     for pos in grass_positions:
         pos[1] += OBSTACLE_SPEED
         if pos[1] > SCREEN_HEIGHT:
@@ -121,22 +124,39 @@ def draw_grass(screen, grass_positions):
         for offset_x, offset_y in blades:
             pygame.draw.line(screen, color, (x + offset_x, y), (x + offset_x, y + offset_y))
 
-def draw_screen(screen, car_image, cone_image, tree_image, car_hitbox, obstacles, font, score, line_positions, tree_positions, grass_positions):
+def draw_screen(screen, car_image, cone_image, tree_image, car_hitbox, obstacles, font, score, line_positions, tree_positions, grass_positions, game_over):
     screen.fill((34, 139, 34))
     pygame.draw.rect(screen, (50, 50, 50), (50, 0, 300, SCREEN_HEIGHT))
     draw_grass(screen, grass_positions)
     for i in range(len(line_positions)):
         pygame.draw.line(screen, (255, 255, 255), (200, line_positions[i]), (200, line_positions[i] + 20), 4)
-        line_positions[i] += OBSTACLE_SPEED
-        if line_positions[i] > SCREEN_HEIGHT:
-            line_positions[i] -= len(line_positions) * 40
+        if not game_over:
+            line_positions[i] += OBSTACLE_SPEED
+            if line_positions[i] > SCREEN_HEIGHT:
+                line_positions[i] -= len(line_positions) * 40
+    for obs in obstacles:
+        screen.blit(cone_image, (obs.x - 7, obs.y - 7))
     for pos in tree_positions:
         screen.blit(tree_image, (pos[0], pos[1]))
     screen.blit(car_image, (car_hitbox.x - 15, car_hitbox.y - 15))
-    for obs in obstacles:
-        screen.blit(cone_image, (obs.x - 7, obs.y - 7))
     score_text = font.render(f"Score: {score}", True, (255, 255, 255))
     screen.blit(score_text, (10, 10))
+    if game_over:
+        game_over_lines = [
+            "Oops! You hit a cone!",
+            "Press SPACE to restart",
+            "Press ESC to quit"
+        ]
+        rect_width = 280
+        rect_height = 90
+        rect_x = (SCREEN_WIDTH - rect_width) // 2
+        rect_y = 140
+        pygame.draw.rect(screen, (0, 0, 0), (rect_x, rect_y, rect_width, rect_height))
+        for i, line in enumerate(game_over_lines):
+            text_surface = font.render(line, True, (255, 255, 255))
+            text_x = rect_x + 20
+            text_y = rect_y + 10 + i*25
+            screen.blit(text_surface, (text_x, text_y))
 
 def main():
     pygame.init()
@@ -153,22 +173,37 @@ def main():
     new_height = int(original_height * (NEW_TREE_WIDTH / original_width))
     tree_image = pygame.transform.scale(tree_image, (NEW_TREE_WIDTH, new_height))
     tree_width = tree_image.get_width()
-    font = pygame.font.SysFont(None, 30)
+    font = pygame.font.SysFont(None, 24)
     obstacles = create_obstacles(5)
     tree_positions = create_trees(6, tree_width)
     grass_positions = create_grass(GRASS_COUNT)
     score = 0
+    game_over = False
     running = True
     line_positions = [i * 40 for i in range(12)]
     while running:
-        running_events = handle_events()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
         keys = pygame.key.get_pressed()
-        move_car(car_hitbox, keys)
-        move_trees(tree_positions, tree_width)
-        move_grass(grass_positions)
-        running_obstacles, score = move_obstacles(obstacles, car_hitbox, score)
-        running = running_events and running_obstacles
-        draw_screen(screen, car_image, cone_image, tree_image, car_hitbox, obstacles, font, score, line_positions, tree_positions, grass_positions)
+        if keys[pygame.K_ESCAPE]:
+            running = False
+        if not game_over:
+            move_car(car_hitbox, keys)
+            move_trees(tree_positions, tree_width, game_over)
+            move_grass(grass_positions, game_over)
+        running_obstacles, score = move_obstacles(obstacles, car_hitbox, score, game_over)
+        if not running_obstacles:
+            game_over = True
+        if game_over and keys[pygame.K_SPACE]:
+            obstacles = create_obstacles(5)
+            tree_positions = create_trees(6, tree_width)
+            grass_positions = create_grass(GRASS_COUNT)
+            car_hitbox.x = 180
+            car_hitbox.y = 330
+            score = 0
+            game_over = False
+        draw_screen(screen, car_image, cone_image, tree_image, car_hitbox, obstacles, font, score, line_positions, tree_positions, grass_positions, game_over)
         pygame.display.flip()
         clock.tick(60)
     pygame.quit()
