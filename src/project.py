@@ -71,11 +71,11 @@ def move_car(car_hitbox, keys):
     if keys[pygame.K_RIGHT] and car_hitbox.right < 350:
         car_hitbox.x += 5
 
-def move_obstacles(obstacles, car_hitbox, score, game_over):
+def move_obstacles(obstacles, car_hitbox, score, game_over, speed):
     if game_over:
         return True, score
     for obs in obstacles:
-        obs.y += OBSTACLE_SPEED
+        obs.y += speed
         if obs.y > SCREEN_HEIGHT:
             obs.y = random.randint(-200, -20)
             obs.x = random.choice(LANES)
@@ -84,11 +84,11 @@ def move_obstacles(obstacles, car_hitbox, score, game_over):
             return False, score
     return True, score
 
-def move_trees(tree_positions, tree_width, game_over):
+def move_trees(tree_positions, tree_width, game_over, speed):
     if game_over:
         return
     for i, pos in enumerate(tree_positions):
-        pos[1] += OBSTACLE_SPEED
+        pos[1] += speed
         if pos[1] > SCREEN_HEIGHT:
             attempts = 0
             while attempts < 1000:
@@ -105,11 +105,11 @@ def move_trees(tree_positions, tree_width, game_over):
                     pos[1] = random.randint(-80, -20)
                     break
 
-def move_grass(grass_positions, game_over):
+def move_grass(grass_positions, game_over, speed):
     if game_over:
         return
     for pos in grass_positions:
-        pos[1] += OBSTACLE_SPEED
+        pos[1] += speed
         if pos[1] > SCREEN_HEIGHT:
             side = random.choice(['left', 'right'])
             pos[1] = random.randint(-50, -10)
@@ -130,10 +130,6 @@ def draw_screen(screen, car_image, cone_image, tree_image, car_hitbox, obstacles
     draw_grass(screen, grass_positions)
     for i in range(len(line_positions)):
         pygame.draw.line(screen, (255, 255, 255), (200, line_positions[i]), (200, line_positions[i] + 20), 4)
-        if not game_over:
-            line_positions[i] += OBSTACLE_SPEED
-            if line_positions[i] > SCREEN_HEIGHT:
-                line_positions[i] -= len(line_positions) * 40
     for obs in obstacles:
         screen.blit(cone_image, (obs.x - 7, obs.y - 7))
     for pos in tree_positions:
@@ -188,11 +184,19 @@ def main():
         keys = pygame.key.get_pressed()
         if keys[pygame.K_ESCAPE]:
             running = False
+        if score >= 20:
+            speed = 6
+        else:
+            speed = OBSTACLE_SPEED
         if not game_over:
             move_car(car_hitbox, keys)
-            move_trees(tree_positions, tree_width, game_over)
-            move_grass(grass_positions, game_over)
-        running_obstacles, score = move_obstacles(obstacles, car_hitbox, score, game_over)
+            move_trees(tree_positions, tree_width, game_over, speed)
+            move_grass(grass_positions, game_over, speed)
+            for i in range(len(line_positions)):
+                line_positions[i] += speed
+                if line_positions[i] > SCREEN_HEIGHT:
+                    line_positions[i] -= len(line_positions) * 40
+        running_obstacles, score = move_obstacles(obstacles, car_hitbox, score, game_over, speed)
         if not running_obstacles:
             game_over = True
         if game_over and keys[pygame.K_SPACE]:
