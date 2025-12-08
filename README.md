@@ -54,5 +54,6 @@ A playable game where the car can move left/right, cones fall, the score increas
 ## Files in Repository
 - **src/project.py** – Main game code with all functions and classes.  
 - **src/*.png** – PNG images used in the game (car, cone, tree).  
-- **README.md** – This file with project description, demo link, and instructions.  
 - **proposal.md** – Project proposal submitted for the course.
+- **README.md** – This file with project description, demo link, and instructions.  
+- **requirements.txt** – Lists Python libraries required (`pygame`).  
