@@ -30,7 +30,7 @@ The player can restart by pressing **SPACE** or quit the game by pressing **ESC*
 Trees, grass, and lane lines move downward smoothly to simulate driving. Cones are drawn behind the trees for correct layering.
 
 - **Custom Graphics**
-The car, cone, and tree images used in the game are custom PNGs prepared and scaled to match the pixel art style.
+The car, cone, and tree images used in the game were created by me as custom PNGs and scaled to match the pixel art style.
 
 ## Challenges
 - Learning Pygame for animation, input handling, and collision detection.
@@ -45,15 +45,14 @@ A fully functional game with smooth movement, accurate collision detection, cont
 
 **Minimal Viable Outcome:**
 A playable game where the car can move left/right, cones fall, the score increases when avoiding cones, and the game restarts automatically on collision.
-
-## Future Improvements
-- Include background music and sound effects for a more immersive experience.
-- Add levels or increasing difficulty to extend gameplay. 
-- Add multiple car skins and obstacle types for variety.  
-
+ 
 ## Files in Repository
 - **src/project.py** – Main game code with all functions and classes.  
 - **src/*.png** – PNG images used in the game (car, cone, tree).  
 - **proposal.md** – Project proposal submitted for the course.
 - **README.md** – This file with project description, demo link, and instructions.  
 - **requirements.txt** – Lists Python libraries required (`pygame`).  
+
+## How to Run
+1. Install the required library: `pip install -r requirements.txt`
+2. Launch the game: `python src/project.py`
